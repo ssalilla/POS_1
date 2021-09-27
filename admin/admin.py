@@ -1,8 +1,12 @@
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.textinput import TextInput
+from kivy.uix.button import Button
+from kivy.uix.spinner import Spinner
 from collections import OrderedDict
 from pymongo import MongoClient
 from utils.datatable import DataTableWindow
+from datetime import datetime
 from kivy.core.window import Window
 
 Window.size = (1920, 1080)
@@ -10,11 +14,15 @@ Window.size = (1920, 1080)
 class AdminWindow(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        client = MongoClient()
+        db =  client.POS_1_DB
+        self.users = db.users
+        self.products = db.stocks
 
 
        # print(self.get_products())
 
-        content = self.ids.scrn_content
+        content = self.ids.scrn_contents
         users = self.get_users()
         userstable = DataTableWindow(table=users)
         content.add_widget(userstable)
@@ -24,6 +32,35 @@ class AdminWindow(BoxLayout):
         products = self.get_products()
         prod_table = DataTableWindow(table=products)
         product_scrn.add_widget(prod_table)
+
+
+    def add_user_fields(self):
+        target = self.ids.ops_fields
+        target.clear_widgets()
+        crud_first = TextInput(hint_text='First Name')
+        crud_last = TextInput(hint_text='Last Name')
+        crud_user = TextInput(hint_text='User Name')
+        crud_pwd = TextInput(hint_text='Password')
+        crud_des = Spinner(text='Operator', values=['Operator', 'Administrator'])
+        crud_submit = Button(text='Add',size_hint_x=None,width=100,on_release=lambda x: self.add_user(crud_first.text,crud_last.text,crud_user.text,crud_pwd.text,crud_des.text))
+
+        target.add_widget(crud_first)
+        target.add_widget(crud_last)
+        target.add_widget(crud_user)
+        target.add_widget(crud_pwd)
+        target.add_widget(crud_des)
+        target.add_widget(crud_submit)
+    
+    def add_user(self, first, last, user, pwd, des):
+        content = self.ids.scrn_contents
+        content.clear_widgets()
+        self.users.insert_one({'first_name': first, 'last_name': last,
+        'user_name': user, 'password': pwd, 'designation': des,
+        'date': datetime.now()})
+
+        users = self.get_users()
+        userstable = DataTableWindow(table=users)
+        content.add_widget(userstable)
 
 
     def get_users(self):
