@@ -9,9 +9,9 @@ from pymongo import MongoClient
 from utils.datatable import DataTableWindow
 from datetime import datetime
 import hashlib
-from kivy.core.window import Window
-
-Window.size = (1920, 1080)
+import pandas as pd
+import matplotlib.pyplot as plt
+from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg as FCK
 
 class AdminWindow(BoxLayout):
     def __init__(self, **kwargs):
@@ -21,6 +21,20 @@ class AdminWindow(BoxLayout):
         self.users = db.users
         self.products = db.stocks
 
+        product_code = []
+        product_name = []
+        spinvals = []
+        for product in self.products.find():
+            product_code.append(product['product_code'])
+            name = product['product_name']
+            if len(name) > 30:
+                name = name[:30] + '...'
+            product_name.append(name)
+
+        for x in range(len(product_code)):
+            line = ' | '.join([product_code[x],product_name[x]])
+            spinvals.append(line)
+        self.ids.target_product.values = spinvals
 
         content = self.ids.scrn_contents
         users = self.get_users()
@@ -286,7 +300,30 @@ class AdminWindow(BoxLayout):
             idx += 1
         
         return _stocks
-        
+
+    def view_stats(self):
+        plt.cla()
+        self.ids.analysis_res.clear_widgets()
+        target_product = self.ids.target_product.text
+        target = target_product[:target_product.find(' | ')]
+        name = target_product[target_product.find(' | '):]       
+
+        df = pd.read_csv('admin\products_purchase.csv')
+        purchases = []
+        dates = []
+        count = 0
+        for x in range(len(df)):
+            if str(df.Product_Code[x]) == target:
+                purchases.append(df.Purchased[x])
+                dates.append(count)
+                count+=1
+        plt.bar(dates,purchases,color='teal',label=name)
+        plt.ylabel('Total Purchases')
+        plt.xlabel('day')
+
+        self.ids.analysis_res.add_widget(FCK(plt.gcf()))
+
+
     def change_screen(self, instance):
         if instance.text == 'Manage Products':
             self.ids.scrn_mngr.current = 'scrn_product_content'
