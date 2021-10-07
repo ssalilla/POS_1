@@ -2,7 +2,10 @@ from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
+from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
+from kivy.clock import Clock
+from kivy.uix.modalview import ModalView
 
 from collections import OrderedDict
 from pymongo import MongoClient
@@ -12,6 +15,15 @@ import hashlib
 import pandas as pd
 import matplotlib.pyplot as plt
 from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg as FCK
+from kivy.core.window import Window
+
+Window.size = (1920, 1080)
+
+class Notify(ModalView):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.size_hint = (.7,.7)
 
 class AdminWindow(BoxLayout):
     def __init__(self, **kwargs):
@@ -20,6 +32,7 @@ class AdminWindow(BoxLayout):
         db = client.POS_1_DB
         self.users = db.users
         self.products = db.stocks
+        self.notify = Notify()
 
         product_code = []
         product_name = []
@@ -87,25 +100,40 @@ class AdminWindow(BoxLayout):
         target.add_widget(crud_submit)
         
     def add_user(self, first,last,user,pwd,des):
-        content = self.ids.scrn_contents
-        content.clear_widgets()
+        
         pwd = hashlib.sha256(pwd.encode()).hexdigest()
-        self.users.insert_one({'first_name':first,'last_name':last,
+        if first == '' or last == '' or user == '' or pwd == '':
+            self.notify.add_widget(Label(text='[color=#FF0000][b]All Fields Required[/b][/color]',markup=True))
+            self.notify.open()
+            Clock.schedule_once(self.killswitch,1)
+        else:
+            self.users.insert_one({'first_name':first,'last_name':last,
         'user_name':user,'password':pwd,'designation':des,'date':datetime.now()})
+            content = self.ids.scrn_contents
+            content.clear_widgets()
 
-        users = self.get_users()
-        userstable = DataTableWindow(table=users)
-        content.add_widget(userstable)
+            users = self.get_users()
+            userstable = DataTableWindow(table=users)
+            content.add_widget(userstable)
+    
+    def killswitch(self,dtx):
+        self.notify.dismiss()
+        self.notify.clear_widgets()
 
     def add_product(self,code,name,weight,stock,sold,order,purchase):
-        content = self.ids.scrn_product_contents
-        content.clear_widgets()
+        
+        if code == '' or name == '' or weight == '' or stock == '' or order == '': 
+            self.notify.add_widget(Label(text='[color=#FF0000][b]All Fields Required[/b][/color]',markup=True))
+            self.notify.open()
+            Clock.schedule_once(self.killswitch,1)
+        else:
+            self.products.insert_one({'product_code':code,'product_name':name,'product_weight':weight,'in_stock':stock,'sold':sold,'order':order,'last_purchase':purchase})
+            content = self.ids.scrn_product_contents
+            content.clear_widgets()
 
-        self.products.insert_one({'product_code':code,'product_name':name,'product_weight':weight,'in_stock':stock,'sold':sold,'order':order,'last_purchase':purchase})
-
-        prodz = self.get_products()
-        stocktable = DataTableWindow(table=prodz)
-        content.add_widget(stocktable)
+            prodz = self.get_products()
+            stocktable = DataTableWindow(table=prodz)
+            content.add_widget(stocktable)
 
     def update_user_fields(self):
         target = self.ids.ops_fields
@@ -148,24 +176,69 @@ class AdminWindow(BoxLayout):
     
     
     def update_user(self, first,last,user,pwd,des):
-        content = self.ids.scrn_contents
-        content.clear_widgets()
+        
         pwd = hashlib.sha256(pwd.encode()).hexdigest()
-        self.users.update_one({'user_name':user},{'$set':{'first_name':first,'last_name':last,'user_name':user,'password':pwd,'designation':des,'date':datetime.now()}})
+        if user == '':
+            self.notify.add_widget(Label(text='[color=#FF0000][b]All Fields Required[/b][/color]',markup=True))
+            self.notify.open()
+            Clock.schedule_once(self.killswitch,1)
+        else:
+           
+            user = self.users.find_one({'user_name':user})
+            if user == None:
+                self.notify.add_widget(Label(text='[color=#FF0000][b]Invalid Username[/b][/color]',markup=True))
+                self.notify.open()
+                Clock.schedule_once(self.killswitch,1)
+            else:
+                if first == '':
+                    first = user['first_name']
+                if last == '':
+                    last = user['last_name']
+                if pwd == '':
+                    pwd = user['password']
+                content = self.ids.scrn_contents
+                content.clear_widgets()
 
-        users = self.get_users()
-        userstable = DataTableWindow(table=users)
-        content.add_widget(userstable)
+                res = self.users.update_one({'user_name':user['user_name']},{'$set':{'first_name':first,'last_name':last,'user_name':user['user_name'],'password':pwd,'designation':des,'date':datetime.now()}})
+              
+                print(res)
+                users = self.get_users()
+                userstable = DataTableWindow(table=users)
+                content.add_widget(userstable)
     
     def update_product(self,code,name,weight,stock,sold,order,purchase):
-        content = self.ids.scrn_product_contents
-        content.clear_widgets()
 
-        self.products.update_one({'product_code':code},{'$set':{'product_code':code,'product_name':name,'product_weight':weight,'in_stock':stock,'sold':sold,'order':order,'last_purchase':purchase}})
+        if code == '':
+            self.notify.add_widget(Label(text='[color=#FF0000][b]Code required[/b][/color]',markup=True))
+            self.notify.open()
+            Clock.schedule_once(self.killswitch,1)
+        else:
+            target_code = self.products.find_one({'product_code':code})
+            if target_code == None:
+                self.notify.add_widget(Label(text='[color=#FF0000][b]Invalid Code[/b][/color]',markup=True))
+                self.notify.open()
+                Clock.schedule_once(self.killswitch,1)
+            else:
+                if name == '':
+                    name = target_code['product_name']
+                if weight == '':
+                    weight = target_code['product_weight']
+                if stock == '':
+                    stock = target_code['in_stock']
+                if sold == '':
+                    sold = target_code['sold']
+                if order == '':
+                    order = target_code['order']
+                if purchase == '':
+                    purchase = target_code['last_purchase']
+                content = self.ids.scrn_product_contents
+                content.clear_widgets()
+                    
+                self.products.update_one({'product_code':code},{'$set':{'product_code':code,'product_name':name,'product_weight':weight,'in_stock':stock,'sold':sold,'order':order,'last_purchase':purchase}})
     
-        prodz = self.get_products()
-        stocktable = DataTableWindow(table=prodz)
-        content.add_widget(stocktable)
+                prodz = self.get_products()
+                stocktable = DataTableWindow(table=prodz)
+                content.add_widget(stocktable)
     
     def remove_user_fields(self):
         target = self.ids.ops_fields
@@ -186,24 +259,47 @@ class AdminWindow(BoxLayout):
         target.add_widget(crud_submit)
 
     def remove_user(self,user):
-        content = self.ids.scrn_contents
-        content.clear_widgets()
 
-        self.users.remove({'user_name':user})
+        if user == '':
+            self.notify.add_widget(Label(text='[color=#FF0000][b]All Fields Required[/b][/color]',markup=True))
+            self.notify.open()
+            Clock.schedule_once(self.killswitch,1)
+        else:
+            target_user = self.users.find_one({'user_name':user})
+            if target_user == None:
+                self.notify.add_widget(Label(text='[color=#FF0000][b]Invalid UserName[/b][/color]',markup=True))
+                self.notify.open()
+                Clock.schedule_once(self.killswitch,1)
+            else:
+                content = self.ids.scrn_contents
+                content.clear_widgets()
 
-        users = self.get_users()
-        userstable = DataTableWindow(table=users)
-        content.add_widget(userstable)
+                self.users.remove({'user_name':user})
+
+                users = self.get_users()
+                userstable = DataTableWindow(table=users)
+                content.add_widget(userstable)
     
     def remove_product(self,code):
-        content = self.ids.scrn_product_contents
-        content.clear_widgets()
+        if code == '':
+            self.notify.add_widget(Label(text='[color=#FF0000][b]All Fields Required[/b][/color]',markup=True))
+            self.notify.open()
+            Clock.schedule_once(self.killswitch,1)
+        else:
+            target_code = self.products.find_one({'product_code':code})
+            if target_code == None:
+                self.notify.add_widget(Label(text='[color=#FF0000][b]Invalid Code[/b][/color]',markup=True))
+                self.notify.open()
+                Clock.schedule_once(self.killswitch,1)
+            else:
+                content = self.ids.scrn_product_contents
+                content.clear_widgets()
 
-        self.products.remove({'product_code':code})
+                self.products.remove({'product_code':code})
 
-        prodz = self.get_products()
-        stocktable = DataTableWindow(table=prodz)
-        content.add_widget(stocktable)
+                prodz = self.get_products()
+                stocktable = DataTableWindow(table=prodz)
+                content.add_widget(stocktable)
 
     def get_users(self):
         client = MongoClient()
