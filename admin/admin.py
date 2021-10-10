@@ -6,7 +6,6 @@ from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
 from kivy.clock import Clock
 from kivy.uix.modalview import ModalView
-from kivy.lang import Builder
 from kivy.core.window import Window
 
 Window.size = (1920, 1080)
@@ -20,7 +19,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg as FCK
 
-Builder.load_file('admin/admin.kv')
 
 class Notify(ModalView):
     def __init__(self, **kwargs):
@@ -32,7 +30,7 @@ class AdminWindow(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         client = MongoClient()
-        db = client.silverpos
+        db = client.POS_1_DB
         self.users = db.users
         self.products = db.stocks
         self.notify = Notify()
@@ -306,7 +304,7 @@ class AdminWindow(BoxLayout):
 
     def get_users(self):
         client = MongoClient()
-        db = client.silverpos
+        db = client.POS_1_DB
         users = db.users
         _users = OrderedDict()
         _users['first_names'] = {}
@@ -344,7 +342,7 @@ class AdminWindow(BoxLayout):
 
     def get_products(self):
         client = MongoClient()
-        db = client.silverpos
+        db = client.POS_1_DB
         products = db.stocks
         _stocks = OrderedDict()
         _stocks['product_code'] = {}

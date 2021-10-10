@@ -1,6 +1,5 @@
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
-from kivy.lang import Builder
 from kivy.core.window import Window
 
 Window.size = (1920, 1080)
@@ -8,15 +7,13 @@ Window.size = (1920, 1080)
 from pymongo import MongoClient
 import hashlib
 
-Builder.load_file('signin/signin.kv')
-
 class SigninWindow(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def validate_user(self):
         client = MongoClient()
-        db = client.silverpos
+        db = client.POS_1_DB
         users = db.users
 
         user = self.ids.username_field
