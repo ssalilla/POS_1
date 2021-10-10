@@ -12,7 +12,7 @@ Window.size = (1920, 1080)
 
 from collections import OrderedDict
 from pymongo import MongoClient
-from utils.datatable import DataTable
+from utils.datatable import DataTableWindow
 from datetime import datetime
 import hashlib
 import pandas as pd
@@ -52,13 +52,13 @@ class AdminWindow(BoxLayout):
 
         content = self.ids.scrn_contents
         users = self.get_users()
-        userstable = DataTable(table=users)
+        userstable = DataTableWindow(table=users)
         content.add_widget(userstable)
 
         #Display Products
         product_scrn = self.ids.scrn_product_contents
         products = self.get_products()
-        prod_table = DataTable(table=products)
+        prod_table = DataTableWindow(table=products)
         product_scrn.add_widget(prod_table)
     
     def logout(self):
@@ -117,7 +117,7 @@ class AdminWindow(BoxLayout):
             content.clear_widgets()
 
             users = self.get_users()
-            userstable = DataTable(table=users)
+            userstable = DataTableWindow(table=users)
             content.add_widget(userstable)
     
     def killswitch(self,dtx):
@@ -136,7 +136,7 @@ class AdminWindow(BoxLayout):
             content.clear_widgets()
 
             prodz = self.get_products()
-            stocktable = DataTable(table=prodz)
+            stocktable = DataTableWindow(table=prodz)
             content.add_widget(stocktable)
 
     def update_user_fields(self):
@@ -204,7 +204,7 @@ class AdminWindow(BoxLayout):
                 content.clear_widgets()
 
                 users = self.get_users()
-                userstable = DataTable(table=users)
+                userstable = DataTableWindow(table=users)
                 content.add_widget(userstable)
     
     def update_product(self,code,name,weight,stock,sold,order,purchase):
@@ -238,7 +238,7 @@ class AdminWindow(BoxLayout):
                 self.products.update_one({'product_code':code},{'$set':{'product_code':code,'product_name':name,'product_weight':weight,'in_stock':stock,'sold':sold,'order':order,'last_purchase':purchase}})
     
                 prodz = self.get_products()
-                stocktable = DataTable(table=prodz)
+                stocktable = DataTableWindow(table=prodz)
                 content.add_widget(stocktable)
     
     def remove_user_fields(self):
@@ -278,7 +278,7 @@ class AdminWindow(BoxLayout):
                 self.users.remove({'user_name':user})
 
                 users = self.get_users()
-                userstable = DataTable(table=users)
+                userstable = DataTableWindow(table=users)
                 content.add_widget(userstable)
     
     def remove_product(self,code):
@@ -299,7 +299,7 @@ class AdminWindow(BoxLayout):
                 self.products.remove({'product_code':code})
 
                 prodz = self.get_products()
-                stocktable = DataTable(table=prodz)
+                stocktable = DataTableWindow(table=prodz)
                 content.add_widget(stocktable)
 
     def get_users(self):
@@ -405,7 +405,7 @@ class AdminWindow(BoxLayout):
         target = target_product[:target_product.find(' | ')]
         name = target_product[target_product.find(' | '):]       
 
-        df = pd.read_csv('products_purchase.csv')
+        df = pd.read_csv('admin\products_purchase.csv')
         purchases = []
         dates = []
         count = 0
