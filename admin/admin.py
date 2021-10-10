@@ -6,18 +6,21 @@ from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
 from kivy.clock import Clock
 from kivy.uix.modalview import ModalView
+from kivy.lang import Builder
+from kivy.core.window import Window
+
+Window.size = (1920, 1080)
 
 from collections import OrderedDict
 from pymongo import MongoClient
-from utils.datatable import DataTableWindow
+from utils.datatable import DataTable
 from datetime import datetime
 import hashlib
 import pandas as pd
 import matplotlib.pyplot as plt
 from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg as FCK
-from kivy.core.window import Window
 
-Window.size = (1920, 1080)
+Builder.load_file('admin/admin.kv')
 
 class Notify(ModalView):
     def __init__(self, **kwargs):
@@ -29,7 +32,7 @@ class AdminWindow(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         client = MongoClient()
-        db = client.POS_1_DB
+        db = client.silverpos
         self.users = db.users
         self.products = db.stocks
         self.notify = Notify()
@@ -51,14 +54,17 @@ class AdminWindow(BoxLayout):
 
         content = self.ids.scrn_contents
         users = self.get_users()
-        userstable = DataTableWindow(table=users)
+        userstable = DataTable(table=users)
         content.add_widget(userstable)
 
         #Display Products
         product_scrn = self.ids.scrn_product_contents
         products = self.get_products()
-        prod_table = DataTableWindow(table=products)
+        prod_table = DataTable(table=products)
         product_scrn.add_widget(prod_table)
+    
+    def logout(self):
+        self.parent.parent.current = 'scrn_si'
 
     def add_user_fields(self):
         target = self.ids.ops_fields
@@ -113,7 +119,7 @@ class AdminWindow(BoxLayout):
             content.clear_widgets()
 
             users = self.get_users()
-            userstable = DataTableWindow(table=users)
+            userstable = DataTable(table=users)
             content.add_widget(userstable)
     
     def killswitch(self,dtx):
@@ -132,7 +138,7 @@ class AdminWindow(BoxLayout):
             content.clear_widgets()
 
             prodz = self.get_products()
-            stocktable = DataTableWindow(table=prodz)
+            stocktable = DataTable(table=prodz)
             content.add_widget(stocktable)
 
     def update_user_fields(self):
@@ -183,7 +189,6 @@ class AdminWindow(BoxLayout):
             self.notify.open()
             Clock.schedule_once(self.killswitch,1)
         else:
-           
             user = self.users.find_one({'user_name':user})
             if user == None:
                 self.notify.add_widget(Label(text='[color=#FF0000][b]Invalid Username[/b][/color]',markup=True))
@@ -196,14 +201,12 @@ class AdminWindow(BoxLayout):
                     last = user['last_name']
                 if pwd == '':
                     pwd = user['password']
+                self.users.update_one({'user_name':user},{'$set':{'first_name':first,'last_name':last,'user_name':user,'password':pwd,'designation':des,'date':datetime.now()}})
                 content = self.ids.scrn_contents
                 content.clear_widgets()
 
-                res = self.users.update_one({'user_name':user['user_name']},{'$set':{'first_name':first,'last_name':last,'user_name':user['user_name'],'password':pwd,'designation':des,'date':datetime.now()}})
-              
-                print(res)
                 users = self.get_users()
-                userstable = DataTableWindow(table=users)
+                userstable = DataTable(table=users)
                 content.add_widget(userstable)
     
     def update_product(self,code,name,weight,stock,sold,order,purchase):
@@ -221,8 +224,8 @@ class AdminWindow(BoxLayout):
             else:
                 if name == '':
                     name = target_code['product_name']
-                if weight == '':
-                    weight = target_code['product_weight']
+                if product_weight == '':
+                    product_weight = target_code['product_weight']
                 if stock == '':
                     stock = target_code['in_stock']
                 if sold == '':
@@ -237,7 +240,7 @@ class AdminWindow(BoxLayout):
                 self.products.update_one({'product_code':code},{'$set':{'product_code':code,'product_name':name,'product_weight':weight,'in_stock':stock,'sold':sold,'order':order,'last_purchase':purchase}})
     
                 prodz = self.get_products()
-                stocktable = DataTableWindow(table=prodz)
+                stocktable = DataTable(table=prodz)
                 content.add_widget(stocktable)
     
     def remove_user_fields(self):
@@ -277,7 +280,7 @@ class AdminWindow(BoxLayout):
                 self.users.remove({'user_name':user})
 
                 users = self.get_users()
-                userstable = DataTableWindow(table=users)
+                userstable = DataTable(table=users)
                 content.add_widget(userstable)
     
     def remove_product(self,code):
@@ -298,12 +301,12 @@ class AdminWindow(BoxLayout):
                 self.products.remove({'product_code':code})
 
                 prodz = self.get_products()
-                stocktable = DataTableWindow(table=prodz)
+                stocktable = DataTable(table=prodz)
                 content.add_widget(stocktable)
 
     def get_users(self):
         client = MongoClient()
-        db = client.POS_1_DB
+        db = client.silverpos
         users = db.users
         _users = OrderedDict()
         _users['first_names'] = {}
@@ -341,7 +344,7 @@ class AdminWindow(BoxLayout):
 
     def get_products(self):
         client = MongoClient()
-        db = client.POS_1_DB
+        db = client.silverpos
         products = db.stocks
         _stocks = OrderedDict()
         _stocks['product_code'] = {}
@@ -404,7 +407,7 @@ class AdminWindow(BoxLayout):
         target = target_product[:target_product.find(' | ')]
         name = target_product[target_product.find(' | '):]       
 
-        df = pd.read_csv('admin\products_purchase.csv')
+        df = pd.read_csv('products_purchase.csv')
         purchases = []
         dates = []
         count = 0

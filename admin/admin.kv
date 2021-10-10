@@ -10,7 +10,7 @@
         Rectangle:
             size: self.size
             pos: self.pos
-
+    
     BoxLayout:
         id: top_nav
         size_hint_y: None
@@ -34,11 +34,19 @@
             
                 DropDown:
                     id: file_dropdown
+                    
+                    Button:
+                        id: close
+                        text: 'logout'
+                        size_hint_y: None
+                        height: 30
+                        on_release: root.logout()
                     Button:
                         id: close
                         text: 'quit'
                         size_hint_y: None
                         height: 30
+                        on_release: Window.close()
         Label:
             text: 'Admin Dashboard'
             bold: True
@@ -161,10 +169,10 @@
                         orientation: 'vertical'
                         spacing: 10
                         BoxLayout:
-                            #orientation: 'vertical'
+                            # orientation: 'vertical'
                             size_hint_y: None
                             height: 45
-                            Spinner: 
+                            Spinner:
                                 id: target_product
                                 text: 'Choose Product'
                             Button:
@@ -174,4 +182,3 @@
                                 on_release: root.view_stats()
                         BoxLayout:
                             id: analysis_res
-

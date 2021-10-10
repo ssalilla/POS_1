@@ -22,7 +22,7 @@
                 size: self.size
                 pos: self.pos
         Label:
-            text: 'POS System'
+            text: 'SilverPOS System'
             size_hint_x: .9
             bold: True
             color: (1,1,1,1)
@@ -30,6 +30,9 @@
             id: loggedin_user
             text: 'jdoe'
             color: (1,1,1,1)
+            size_hint_x: .1
+            underline: True
+            on_release: root.logout()
 
     BoxLayout:
         id: current
@@ -51,7 +54,7 @@
             text: 'Default Product'
             background_normal: ''
             background_color: (.06, .4, .4, 1)
-        Button:
+        Button: 
             id: cur_price
             text: '0.00'
             background_normal: ''
@@ -76,7 +79,7 @@
                     Rectangle:
                         size: self.size
                         pos: self.pos
-
+                    
                 FlatButton:
                     text: 'Qty'
                     size_hint_x: .1
@@ -103,7 +106,7 @@
                 id: product_inputs
                 size_hint_y: None
                 height: 30
-                spacing: 5
+                spacing: 5   
                 TextInput:
                     id: qty_inp
                     size_hint_x: .1
@@ -160,7 +163,7 @@
                 GridLayout:
                     id: products
                     cols: 1
-
+                
 
 
         BoxLayout:
@@ -171,8 +174,7 @@
             TextInput:
                 id: receipt_preview
                 readonly: True
-                text: 'StoreName\n123 Main St\nBKK\n\nTel: (000)-000-0000\nReceipt No: \nDate: \n\n'
-
+                text: 'The Collector\n123 Main St\nKnowhere, Space\n\nTel: (555)-123-456\nReceipt No: \nDate: \n\n'
     BoxLayout:
         id: footer
         size_hint_y: None
